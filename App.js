@@ -6,9 +6,9 @@
  * @flow strict-local
  */
 
-import React from 'react';
-import type {Node} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
+  Button,
   SafeAreaView,
   ScrollView,
   StatusBar,
@@ -18,72 +18,78 @@ import {
   View,
 } from 'react-native';
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+import {Colors} from 'react-native/Libraries/NewAppScreen';
 
-const Section = ({children, title}): Node => {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
-};
+import messaging from '@react-native-firebase/messaging';
+import {requestUserPermission} from './NotificationHelper/NotificationServices';
+import getNotifeeNotification from './NotificationHelper/NotifeeDisplayNotification';
 
-const App: () => Node = () => {
+const App = () => {
+  // useEffect(() => {
+  //   requestUserPermission();
+  //   const unsubscribe = messaging().onMessage(async remoteMessage => {
+  //     console.log('remoteMessage', JSON.stringify(remoteMessage));
+  //     // getNotifeeNotification(remoteMessage);
+  //     Alert.alert('A new FCM message arrived!', JSON.stringify(remoteMessage));
+  //   });
+
+  //   return unsubscribe;
+  // }, []);
+
+  useEffect(() => {
+    requestUserPermission();
+    messaging().onNotificationOpenedApp(remoteMessage => {
+      console.log(
+        'Notification caused app to open from background state:',
+        remoteMessage.notification,
+      );
+    });
+
+    // Check whether an initial notification is available
+    messaging()
+      .getInitialNotification()
+      .then(remoteMessage => {
+        if (remoteMessage) {
+          console.log(
+            'Notification caused app to open from quit state:',
+            remoteMessage.notification,
+          );
+        }
+      });
+  }, []);
+
   const isDarkMode = useColorScheme() === 'dark';
 
   const backgroundStyle = {
     backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
   };
+  const TestremoteMessage = {
+    notification: {
+      title: 'Test',
+      body: 'Test Notifee Message',
+    },
+  };
 
   return (
-    <SafeAreaView style={backgroundStyle}>
+    <SafeAreaView style={{flex: 1}}>
       <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
+        style={{...backgroundStyle}}>
         <View
           style={{
             backgroundColor: isDarkMode ? Colors.black : Colors.white,
+            // height: 50,
+            alignItems: 'center',
+            flex: 1,
           }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.js</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
+          <Text style={styles.highlight}>React Native Notfiee</Text>
+          <Button
+            title="Test Notifiee "
+            onPress={() => {
+              getNotifeeNotification(TestremoteMessage);
+            }}
+          />
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -106,6 +112,7 @@ const styles = StyleSheet.create({
   },
   highlight: {
     fontWeight: '700',
+    fontSize: 30,
   },
 });
 
